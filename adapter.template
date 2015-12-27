@@ -1,0 +1,53 @@
+<?php
+namespace ${namespace}\Entity\EmberDataSerializerAdapter;
+
+use UniqueLibs\EmberDataSerializerBundle\Interfaces\EmberDataSerializableInterface;
+use UniqueLibs\EmberDataSerializerBundle\Interfaces\EmberDataSerializerAdapterInterface;
+use ${namespace}\Entity\${model};
+
+class ${model}Adapter implements EmberDataSerializerAdapterInterface
+{
+    const MODEL_NAME_SINGULAR = '${nameSingular}';
+    const MODEL_NAME_PLURAL = '${namePlural}';
+
+    /**
+     * @param EmberDataSerializableInterface $object
+     *
+     * @return bool
+     */
+    public function hasAccess(EmberDataSerializableInterface $object)
+    {
+        /** @var ${model} $object */
+        return true;
+    }
+
+    /**
+     * @param EmberDataSerializableInterface $object
+     *
+     * @return array
+     */
+    public function getData(EmberDataSerializableInterface $object)
+    {
+        /** @var ${model} $object */
+        return [
+            'id' => array($object->getId(), false),
+            ${data}
+        ];
+    }
+
+    /**
+     * @return string
+     */
+    public function getModelNameSingular()
+    {
+        return self::MODEL_NAME_SINGULAR;
+    }
+
+    /**
+     * @return string
+     */
+    public function getModelNamePlural()
+    {
+        return self::MODEL_NAME_PLURAL;
+    }
+}

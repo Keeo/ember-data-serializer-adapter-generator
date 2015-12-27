@@ -1,0 +1,18 @@
+{
+  "name": "ember-data-serializer-adapter-generator",
+  "version": "1.0.0",
+  "description": "Generates adapters from ember model files",
+  "main": "app.js",
+  "dependencies": {
+    "babel-cli": "^6.3.17",
+    "babel-preset-es2015": "^6.3.13",
+    "fs-extra": "^0.26.3",
+    "inflection": "^1.8.0",
+    "string": "^3.3.1"
+  },
+  "scripts": {
+    "build": "babel src -d dist"
+  },
+  "author": "Martin Morávek <moravek.martin@gmail.com>",
+  "license": "MIT"
+}
