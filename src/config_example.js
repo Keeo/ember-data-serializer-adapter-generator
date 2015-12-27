@@ -1,13 +1,12 @@
 export default {
   model: {
-    directory: 'T:/ember/app/models',
+    directory: '/ember/app/models',
 
     fileEncoding: 'utf8',
 
     /**
-     *   I. group field name
-     *  II. group hasMany or belongsTo
-     * III. group async:true, false,.. | optional
+     *  I. group field name
+     * II. group async:true, false
      */
     regexHasMany: /(\w+): *(?:DS.)?hasMany\((?:'|")([\w-_]+)(?:'|"), (\{.*\})?\),?/,
     regexBelongsTo: /(\w+): *(?:DS.)?belongsTo\((?:'|")([\w-_]+)(?:'|"), (\{.*\})?\),?/,
@@ -15,17 +14,21 @@ export default {
     async: /(?:'|")?async(?:'|")?: ?(true|false)/
   },
   adapter: {
-    namespace: 'Acme\\UserBundle',
+    namespace: 'Acme\\AcmeBundle',
+    directory: '/src/Acme/AcmeBundle/Entity/EmberDataSerializerAdapter',
     data: {
       padding: ',\n            ',
       trailingComma: true
     },
+    serviceTemplateName: 'acme.acmebundle.ember_data_serializer_adapter',
+    serviceTemplateClass: 'class: Acme\\AcmeBundle\\Entity\\EmberDataSerializerAdapter',
 
     /**
-     * Override async property.
+     * Override sideLoad property.
      */
-    async: {
-      company: true
+    sideLoad: {
+      user: false,
+      userGroup: true
     }
   }
 }

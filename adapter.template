@@ -30,7 +30,7 @@ class ${model}Adapter implements EmberDataSerializerAdapterInterface
     {
         /** @var ${model} $object */
         return [
-            'id' => array($object->getId(), false),
+            'id' => [$object->getId(), false],
             ${data}
         ];
     }

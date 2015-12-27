@@ -7,12 +7,13 @@ import mkdirp from 'mkdirp';
 
 export default class Converter {
   constructor() {
-    this.outputDirectory = __dirname + path.sep + '..' + path.sep + 'output';
+    this.outputDirectory = config.adapter.directory ? config.adapter.directory : __dirname + path.sep + '..' + path.sep + 'output';
     fs.emptydirSync(this.outputDirectory);
   }
 
   convert() {
     let models = fs.readdirSync(config.model.directory);
+    let services = [];
     models.forEach(modelFile => {
       if (S(modelFile).startsWith('.')) {
         return;
@@ -21,14 +22,27 @@ export default class Converter {
 
       let model = fs.readFileSync(S(config.model.directory).ensureRight(path.sep) + modelFile, {encoding: config.model.fileEncoding});
       let modelName = this.parseModelName(modelFile);
-      this.export({
+      let variables = {
         data: this.parseData(model),
         namespace: config.adapter.namespace,
-        model: inflection.classify(S(modelName).replaceAll('-', '_')),
+        model: this.camelize(modelName),
         nameSingular: inflection.singularize(modelName),
         namePlural: inflection.pluralize(modelName)
-      });
+      };
+      this.export(variables);
+      services.push(variables.model);
     });
+    this.exportServices(services);
+  }
+
+  exportServices(services){
+    let data = 'services:\n';
+    services.forEach(service => {
+      data += `    ${config.adapter.serviceTemplateName}\\${service}:\n`;
+      data += `        ${config.adapter.serviceTemplateClass}\\${service}Adapter\n`;
+    });
+    fs.ensureDirSync(this.outputDirectory);
+    fs.writeFileSync(S(this.outputDirectory).ensureRight(path.sep) + 'adapters.yml', data);
   }
 
   export(variables) {
@@ -60,29 +74,29 @@ export default class Converter {
     S(model).lines().forEach(line => {
       let manyMatches = config.model.regexHasMany.exec(line);
       if (manyMatches) {
-        let getter = inflection.classify(inflection.pluralize(manyMatches[2]));
-        let async = !this.isAsync(manyMatches[2], manyMatches[3]) ? 'true' : 'false';
-        data.push(`'${manyMatches[1]}' => array($object->get${getter}(), ${async})`);
+        let getter = this.camelizePluralize(manyMatches[1]);
+        let async = this.isSideLoaded(manyMatches[2], manyMatches[3]) ? 'true' : 'false';
+        data.push(`'${manyMatches[1]}' => [$object->get${getter}(), ${async}]`);
       }
 
       let belongsMatches = config.model.regexBelongsTo.exec(line);
       if (belongsMatches) {
-        let getter = inflection.classify(belongsMatches[2]);
-        let async = this.isAsync(belongsMatches[2], belongsMatches[3]) ? 'true' : 'false';
-        data.push(`'${belongsMatches[1]}' => array($object->get${getter}(), ${async})`);
+        let getter = this.camelize(belongsMatches[1]);
+        let async = this.isSideLoaded(belongsMatches[2], belongsMatches[3]) ? 'true' : 'false';
+        data.push(`'${belongsMatches[1]}' => [$object->get${getter}(), ${async}]`);
       }
 
       let attrMatches = config.model.regexAttribute.exec(line);
       if (attrMatches) {
-        let getter = inflection.classify(attrMatches[1]);
-        data.push(`'${attrMatches[1]}' => array($object->get${getter}(), false)`);
+        let getter = this.camelize(attrMatches[1]);
+        data.push(`'${attrMatches[1]}' => [$object->get${getter}(), false]`);
       }
     });
     return data;
   }
 
-  isAsync(model, block) {
-    let forced = config.adapter.async[model];
+  isSideLoaded(model, block) {
+    let forced = config.adapter.sideLoad[inflection.camelize(S(model).replaceAll('-', '_'), true)];
     if (forced !== undefined) {
       return forced;
     }
@@ -90,10 +104,10 @@ export default class Converter {
     if (S(block).contains('async')) {
       var async = config.model.async.exec(block);
       if (async[1] === 'true') {
-        return true;
+        return false;
       }
       if (async[1] === 'false') {
-        return false;
+        return true;
       }
       console.error('Debug: ', async);
       throw 'Undefined async. Check regex or your model.';
@@ -104,5 +118,13 @@ export default class Converter {
 
   getTemplate() {
     return fs.readFileSync(`${__dirname}${path.sep}..${path.sep}adapter.template`, {encoding: 'utf8'});
+  }
+
+  camelizePluralize(str) {
+    return inflection.transform(S(str).replaceAll('-', '_').s, ['camelize', 'pluralize']);
+  }
+
+  camelize(str) {
+    return inflection.camelize(S(str).replaceAll('-', '_').s);
   }
 }
